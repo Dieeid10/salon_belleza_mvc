@@ -1,0 +1,1 @@
+"""Esquemas Pydantic para validar solicitudes y respuestas de la API."""
