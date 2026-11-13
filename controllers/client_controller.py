@@ -17,7 +17,7 @@ class ClientController:
         return self.model.update(client_id, client_data)
 
     def activate_client(self, client_id: int) -> dict:
-        return self.model.activate(client_id)
+        return self.model.change_status(client_id, is_active=True)
 
     def deactivate_client(self, client_id: int) -> dict:
-        return self.model.deactivate(client_id)
+        return self.model.change_status(client_id, is_active=False)

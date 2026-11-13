@@ -1,3 +1,5 @@
+import logging
+
 import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -5,6 +7,7 @@ from app_mvc.db.database import db
 from app_mvc.db.crud import Crud
 from app_mvc.config.config import settings
 
+logger = logging.getLogger(__name__)
 _bearer = HTTPBearer(auto_error=False)
 _SUPABASE_ISSUER = f"{settings.supabase_url.rstrip('/')}/auth/v1"
 _JWKS_CLIENT = jwt.PyJWKClient(f"{_SUPABASE_ISSUER}/.well-known/jwks.json")
@@ -33,7 +36,8 @@ def current_user(creds: HTTPAuthorizationCredentials | None = Depends(_bearer)) 
             audience="authenticated",
             issuer=_SUPABASE_ISSUER,
         )
-    except jwt.PyJWTError:
+    except jwt.PyJWTError as error:
+        logger.warning("JWT rechazado durante la validación: %s", type(error).__name__)
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Token inválido")
 
     issued_at = claims.get("iat")

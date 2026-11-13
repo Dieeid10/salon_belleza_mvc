@@ -21,8 +21,17 @@ def get_client_controller() -> Iterator[ClientController]:
         yield ClientController(model)
 
 def response_client(row: dict) -> dict:
-    """Convierte un diccionario de la base de datos a un formato de respuesta."""
-    return ClientResponse.model_validate(row).model_dump(mode="json")
+    """Traduce los nombres de columnas de PostgreSQL al contrato HTTP."""
+    client = {
+        "id": row["id"],
+        "first_name": row["nombre"],
+        "last_name": row["apellido"],
+        "phone": row["telefono"],
+        "email": row["email"],
+        "is_active": row["activo"],
+        "created_at": row["fecha_creacion"],
+    }
+    return ClientResponse.model_validate(client).model_dump(mode="json")
 
 @router.get("/")
 def list_clients(
@@ -30,7 +39,7 @@ def list_clients(
     controller: ClientController = Depends(get_client_controller),
 ):
     """Lista todos los clientes, con opción de filtrar solo los activos."""
-    clients = controller.list_all(only_active)
+    clients = controller.list_clients(only_active)
     return success_response(
         [response_client(client) for client in clients],
         "Clientes obtenidos correctamente",

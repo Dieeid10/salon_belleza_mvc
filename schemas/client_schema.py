@@ -27,8 +27,8 @@ class ClientRequest(BaseModel):
             return value.strip()
         return value
 
-    @model_validator(mode="before")
-    def validate_contacte(self):
+    @model_validator(mode="after")
+    def validate_contact(self):
         if not self.phone and not self.email:
             raise ValueError("Se requiere al menos un teléfono o un correo electrónico")
         return self
@@ -43,4 +43,3 @@ class ClientResponse(BaseModel):
     email: EmailStr | None
     is_active: bool
     created_at: datetime
-    updated_at: datetime
