@@ -51,6 +51,24 @@ class ServiceModel:
             raise ServiceNotFound(service_id)
         return row
 
+    def get_active_by_ids(self, service_ids: list[int]) -> list[dict]:
+        if not service_ids:
+            return []
+        rows = self.crud.select_all(
+            self.TABLE,
+            "id = ANY(%s) AND activo = %s",
+            (service_ids, True),
+        )
+        return [
+            {
+                "id": row["id"],
+                "name": row["nombre_servicio"],
+                "duration_minutes": row["duracion_minutos"],
+                "price": Decimal(str(row["precio"])),
+            }
+            for row in sorted(rows, key=lambda row: row["id"])
+        ]
+
     def create(self, data: dict) -> dict:
         return self.crud.insert(self.TABLE, self._database_values(data))
 

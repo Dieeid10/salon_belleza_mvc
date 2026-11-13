@@ -16,7 +16,15 @@ class ProfessionalModel:
     TABLE = "profesionales"
 
     def __init__(self, connection: Connection) -> None:
+        self.connection = connection
         self.crud = Crud(connection)
+
+    def is_active(self, professional_id: int) -> bool:
+        row = self.connection.execute(
+            "SELECT 1 FROM profesionales WHERE id = %s AND activo = TRUE",
+            (professional_id,),
+        ).fetchone()
+        return row is not None
 
     def list_all(self, only_active: bool = True) -> list[dict]:
         if only_active:

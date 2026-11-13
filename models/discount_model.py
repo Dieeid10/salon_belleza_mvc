@@ -46,6 +46,14 @@ class DiscountModel:
         rows = self.crud.select_all(self.TABLE)
         return [self._to_response(row) for row in rows]
 
+    def get_active_gossip_discount(self) -> dict | None:
+        rows = self.crud.select_all(
+            self.TABLE,
+            "tipo = %s AND activo = %s",
+            (self.GOSSIP_TYPE, True),
+        )
+        return self._to_response(rows[0]) if rows else None
+
     def list_public(self, today: date) -> list[dict]:
         rows = self.connection.execute(
             """

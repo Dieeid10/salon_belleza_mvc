@@ -1,0 +1,1 @@
+"""Excepciones de negocio agrupadas por funcionalidad."""

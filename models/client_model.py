@@ -24,7 +24,54 @@ class ClientModel:
     TABLE = "clientes"
 
     def __init__(self, connection: Connection):
+        self.connection = connection
         self.crud = Crud(connection)
+
+    def get_or_create_for_appointment(
+        self,
+        first_name: str,
+        last_name: str,
+        phone: str,
+    ) -> int:
+        first_name = first_name.strip()
+        last_name = last_name.strip()
+        phone = phone.strip()
+
+        # Serializa reservas concurrentes para el mismo teléfono.
+        self.connection.execute(
+            "SELECT pg_advisory_xact_lock(hashtextextended(%s, 0))",
+            (phone,),
+        )
+        row = self.connection.execute(
+            """
+            SELECT id FROM clientes
+            WHERE telefono = %s
+            ORDER BY activo DESC, id
+            LIMIT 1
+            FOR UPDATE
+            """,
+            (phone,),
+        ).fetchone()
+        if row is not None:
+            self.connection.execute(
+                """
+                UPDATE clientes
+                SET nombre = %s, apellido = %s, activo = TRUE
+                WHERE id = %s
+                """,
+                (first_name, last_name, row["id"]),
+            )
+            return row["id"]
+
+        created = self.crud.insert(
+            self.TABLE,
+            {
+                "nombre": first_name,
+                "apellido": last_name,
+                "telefono": phone,
+            },
+        )
+        return created["id"]
 
     def list_all(self, only_active: bool = True) -> list[dict]:
         """Devuelve todos los clientes en la base de datos."""
