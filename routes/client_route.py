@@ -8,10 +8,10 @@ from app_mvc.db.database import db
 from app_mvc.models.client_model import ClientModel
 from app_mvc.responses import success_response
 from app_mvc.schemas.client_schema import ClientRequest, ClientResponse
-from app_mvc.security import requere_role
+from app_mvc.security import require_role
 
 router = APIRouter(
-    dependencies=[Depends(requere_role("dueno", "vendedor"))],
+    dependencies=[Depends(require_role("dueno", "vendedor"))],
 )
 
 def get_client_controller() -> Iterator[ClientController]:

@@ -1,4 +1,4 @@
-from app.models.auth_model import AuthModel
+from app_mvc.models.auth_model import AuthModel
 
 class AuthController:
     def __init__(self, model: AuthModel):

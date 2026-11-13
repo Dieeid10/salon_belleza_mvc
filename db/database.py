@@ -6,7 +6,7 @@ from psycopg import Connection
 from psycopg.rows import dict_row
 from psycopg_pool import ConnectionPool
 
-from app.shared.infrastructure.config import settings
+from app_mvc.config.config import settings
 
 logger = logging.getLogger(__name__)
 

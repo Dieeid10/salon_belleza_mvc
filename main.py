@@ -1,52 +1,48 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
-from app.routes import router as api_router
-from starlette.middleware.sessions import SessionMiddleware
-from starlette.middleware.cors import CORSMiddleware
-from app.middleware.ip_whitelist import IPWhitelistMiddleware
-from app.middleware.LoggingMiddleware import LoggingMiddleware
-from app.config import ALLOWED_ORIGINS
-from app.logger_config import setup_logger
-from app.responses import register_exception_handlers
+from fastapi.middleware.cors import CORSMiddleware
+
+from app_mvc.config.config import settings
+from app_mvc.db.database import db
+from app_mvc.responses import register_exception_handlers
+from app_mvc.routes import router as api_router
 import uvicorn
-import os
-import sys
 
-setup_logger()
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    db.open()
+    try:
+        yield
+    finally:
+        db.close()
+
+
+app = FastAPI(
+    title="Salón API",
+    version="1.10.0",
+    lifespan=lifespan,
+    docs_url="/docs" if settings.environment != "production" else None,
+    redoc_url=None,
+)
 register_exception_handlers(app)
 
-app.add_middleware(IPWhitelistMiddleware)
-app.add_middleware(LoggingMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[ALLOWED_ORIGINS],
+    allow_origins=settings.cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-    expose_headers=["*"]
 )
-
-app.add_middleware(SessionMiddleware, secret_key="your_secret_key_here")
-
-app.title = "Elearning - Facebook ads"
-app.version = "1.0.1"
-
-def resource_path(relative_path):
-    """Get absolute path to resource, works for dev and for PyInstaller"""
-    if hasattr(sys, '_MEIPASS'):
-        return os.path.join(sys._MEIPASS, relative_path)
-    return os.path.join(os.path.abspath("."), relative_path)
-
-cert_path = resource_path('certs/fb_ca_chain_bundle.crt')
-os.environ['FB_CA_BUNDLE_PATH'] = cert_path
-
-@app.get("/")
-async def health_check():
-    return "Contenedor conectado"
 
 app.include_router(api_router)
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="127.0.0.1", port=8000, reload=False)
+    uvicorn.run(
+        "app_mvc.main:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=settings.environment != "production",
+    )

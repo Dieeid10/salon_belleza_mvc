@@ -1,5 +1,5 @@
-from app.errors import AppError
-from app.config.config import settings
+from app_mvc.errors import AppError
+from app_mvc.config.config import settings
 import httpx
 
 class CredentialsInvalid(AppError):

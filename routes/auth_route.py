@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, status
 
-from app.controllers.auth_controller import AuthController
-from app.models.auth_model import AuthModel
-from app.responses import success_response
-from app.schemas.auth_schema import LoginRequest, RefreshRequest
+from app_mvc.controllers.auth_controller import AuthController
+from app_mvc.models.auth_model import AuthModel
+from app_mvc.responses import success_response
+from app_mvc.schemas.auth_schema import LoginRequest, RefreshRequest
 
 router = APIRouter()
 

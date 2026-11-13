@@ -6,7 +6,7 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
-from app.errors import AppError
+from app_mvc.errors import AppError
 
 logger = logging.getLogger(__name__)
 
