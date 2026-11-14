@@ -94,7 +94,7 @@ Variables disponibles:
 | `SUPABASE_URL` | Sí | URL del proyecto Supabase, por ejemplo `https://<project>.supabase.co`. |
 | `SUPABASE_ANON_KEY` | Sí | Clave publicable/anon usada por el servidor para solicitar login y refresh. No es la `service_role`. |
 | `SUPABASE_SERVICE_ROLE_KEY` | Para gestionar vendedores | Clave administrativa usada solo por la API para invitar/listar/eliminar usuarios de Supabase Auth. Nunca la pongas en Vite o en el escritorio. |
-| `SUPABASE_INVITE_REDIRECT_URL` | No | URL a la que vuelve la persona al aceptar la invitación. Si falta, Supabase usa su Site URL. |
+| `SUPABASE_INVITE_REDIRECT_URL` | Sí para invitar | URL del callback del frontend, por ejemplo `http://localhost:4321/auth/callback`. Debe estar permitida en Supabase Auth. |
 | `JWT_ALGORITHM` | No | Algoritmo aceptado: `ES256` o `HS256`. Por defecto `ES256`. Debe coincidir con Supabase. |
 | `SUPABASE_JWT_SECRET` | Solo para HS256 | Secreto de firma JWT del proyecto. No se usa para `ES256`. |
 | `JWT_EXPIRATION_HOURS` | No | Vida máxima aceptada para un token, en horas. Por defecto `1`; ajústala a la duración configurada en Supabase. |
@@ -110,7 +110,7 @@ DATABASE_URL=postgresql://<user>:<password>@<host>:5432/<database>
 SUPABASE_URL=https://<project-ref>.supabase.co
 SUPABASE_ANON_KEY=<public-anon-key>
 SUPABASE_SERVICE_ROLE_KEY=<server-only-secret-key>
-SUPABASE_INVITE_REDIRECT_URL=http://localhost:3000/auth/callback
+SUPABASE_INVITE_REDIRECT_URL=http://localhost:4321/auth/callback
 JWT_ALGORITHM=ES256
 JWT_EXPIRATION_HOURS=24
 ENVIRONMENT=development
@@ -202,7 +202,8 @@ definitiva siempre se vuelve a aplicar en el backend.
 
 La gestión de vendedores usa Supabase Admin desde el backend. El escritorio
 solo solicita nombre y email: el servidor fija el rol `vendedor`, envía la
-invitación y la persona configura su propia contraseña desde el enlace recibido.
+invitación al frontend Astro (`web/src/pages/auth/callback.astro`) y la persona
+configura su propia contraseña desde el enlace recibido.
 Eliminar un vendedor borra su usuario de Auth; la clave foránea elimina su fila
 de `perfiles` en cascada. El endpoint no permite eliminar el perfil de la dueña.
 

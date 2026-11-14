@@ -1,4 +1,3 @@
-from collections.abc import Iterator
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, status
@@ -15,9 +14,7 @@ from app_mvc.security import require_role
 router = APIRouter(dependencies=[Depends(require_role("dueno"))])
 
 
-def get_staff_controller(
-    connection: Connection = Depends(get_db_connection),
-) -> StaffController:
+def get_staff_controller(connection: Connection = Depends(get_db_connection)) -> StaffController:
     return StaffController(
         profiles=StaffProfileModel(connection),
         auth_admin=SupabaseAdminModel(),
