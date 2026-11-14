@@ -1,0 +1,1 @@
+"""Conexión, transacciones y dependencias de PostgreSQL."""

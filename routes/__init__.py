@@ -7,6 +7,7 @@ from app_mvc.routes.discount_route import router as discount_router
 from app_mvc.routes.sale_route import router as sale_router
 from app_mvc.routes.appointment_route import admin_router as appointment_admin_router
 from app_mvc.routes.appointment_route import public_router as appointment_public_router
+from app_mvc.routes.staff_route import router as staff_router
 
 router = APIRouter()
 
@@ -26,3 +27,4 @@ router.include_router(
 	prefix="/admin/appointments",
 	tags=["Gestión de turnos"],
 )
+router.include_router(staff_router, prefix="/admin/staff", tags=["Personal"])

@@ -1,10 +1,8 @@
-from collections.abc import Iterator
-
 from fastapi import APIRouter, Depends, Query, status
 from psycopg import Connection
 
 from app_mvc.controllers.service_controller import ServiceController
-from app_mvc.db.database import db
+from app_mvc.db.database import get_db_connection
 from app_mvc.models.service_model import ServiceModel
 from app_mvc.responses import success_response
 from app_mvc.schemas.service_schema import ServiceRequest, ServiceResponse
@@ -14,9 +12,10 @@ router = APIRouter()
 staff_access = [Depends(require_role("dueno", "vendedor"))]
 
 
-def get_service_controller() -> Iterator[ServiceController]:
-    with db.transaction() as connection:
-        yield ServiceController(ServiceModel(connection))
+def get_service_controller(
+    connection: Connection = Depends(get_db_connection),
+) -> ServiceController:
+    return ServiceController(ServiceModel(connection))
 
 
 def serialize_service(row: dict) -> dict:

@@ -1,10 +1,8 @@
-from collections.abc import Iterator
-
 from fastapi import APIRouter, Depends, Query, status
 from psycopg import Connection
 
 from app_mvc.controllers.professional_controller import ProfessionalController
-from app_mvc.db.database import db
+from app_mvc.db.database import get_db_connection
 from app_mvc.models.professional_model import ProfessionalModel
 from app_mvc.responses import success_response
 from app_mvc.schemas.professional_schema import (
@@ -17,9 +15,10 @@ router = APIRouter()
 owner_only = [Depends(require_role("dueno"))]
 
 
-def get_professional_controller() -> Iterator[ProfessionalController]:
-    with db.transaction() as connection:
-        yield ProfessionalController(ProfessionalModel(connection))
+def get_professional_controller(
+    connection: Connection = Depends(get_db_connection),
+) -> ProfessionalController:
+    return ProfessionalController(ProfessionalModel(connection))
 
 
 def serialize_professional(row: dict) -> dict:

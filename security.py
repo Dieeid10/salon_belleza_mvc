@@ -3,15 +3,16 @@ import logging
 import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from app_mvc.db.database import db
+from psycopg import Connection
+
 from app_mvc.db.crud import Crud
 from app_mvc.config.config import settings
+from app_mvc.db.database import get_db_connection
 
 logger = logging.getLogger(__name__)
 _bearer = HTTPBearer(auto_error=False)
 _SUPABASE_ISSUER = f"{settings.supabase_url.rstrip('/')}/auth/v1"
 _JWKS_CLIENT = jwt.PyJWKClient(f"{_SUPABASE_ISSUER}/.well-known/jwks.json")
-
 
 def current_user(creds: HTTPAuthorizationCredentials | None = Depends(_bearer)) -> dict:
     if creds is None:
@@ -53,11 +54,13 @@ def current_user(creds: HTTPAuthorizationCredentials | None = Depends(_bearer)) 
     return claims
 
 
-def current_staff(user: dict = Depends(current_user)) -> dict:
+def current_staff(
+    user: dict = Depends(current_user),
+    connection: Connection = Depends(get_db_connection),
+) -> dict:
     """El JWT prueba quién es; que sea personal lo decide la tabla perfiles."""
-    with db.transaction() as conn:
-        crud = Crud(conn)
-        row = crud.select("perfiles", user["sub"], id_field="id")
+    crud = Crud(connection)
+    row = crud.select("perfiles", user["sub"], id_field="id")
     if row is None:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "No tenés permiso")
     return {**user, "rol": row["rol"]}

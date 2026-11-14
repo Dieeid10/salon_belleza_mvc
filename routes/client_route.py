@@ -1,10 +1,8 @@
-from collections.abc import Iterator
-
 from fastapi import APIRouter, Depends, Query, status
 from psycopg import Connection
 
 from app_mvc.controllers.client_controller import ClientController
-from app_mvc.db.database import db
+from app_mvc.db.database import get_db_connection
 from app_mvc.models.client_model import ClientModel
 from app_mvc.responses import success_response
 from app_mvc.schemas.client_schema import ClientRequest, ClientResponse
@@ -14,11 +12,12 @@ router = APIRouter(
     dependencies=[Depends(require_role("dueno", "vendedor"))],
 )
 
-def get_client_controller() -> Iterator[ClientController]:
+def get_client_controller(
+    connection: Connection = Depends(get_db_connection),
+) -> ClientController:
     """Entrega un controller con su modelo conectado a la base de datos."""
-    with db.transaction() as connection:
-        model = ClientModel(connection)
-        yield ClientController(model)
+    model = ClientModel(connection)
+    return ClientController(model)
 
 def response_client(row: dict) -> dict:
     """Traduce los nombres de columnas de PostgreSQL al contrato HTTP."""

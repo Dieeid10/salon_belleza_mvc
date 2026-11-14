@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     supabase_jwt_secret: str | None = None
     supabase_url: str
     supabase_anon_key: str
+    supabase_service_role_key: str | None = None
+    supabase_invite_redirect_url: str | None = None
     jwt_algorithm: Literal["ES256", "HS256"] = "ES256"
     jwt_expiration_hours: int = Field(default=1, gt=0)
     zona_horaria: str = "America/Argentina/Buenos_Aires"

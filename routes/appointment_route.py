@@ -1,12 +1,12 @@
-from collections.abc import Iterator
 from datetime import date
 from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Depends, Query, status
+from psycopg import Connection
 
 from app_mvc.config.config import settings
 from app_mvc.controllers.appointment_controller import AppointmentController
-from app_mvc.db.database import db
+from app_mvc.db.database import get_db_connection
 from app_mvc.models.appointment_model import AppointmentModel
 from app_mvc.models.client_model import ClientModel
 from app_mvc.models.professional_model import ProfessionalModel
@@ -26,19 +26,20 @@ public_router = APIRouter()
 admin_router = APIRouter(
     dependencies=[Depends(require_role("dueno", "vendedor"))],
 )
-def get_appointment_controller() -> Iterator[AppointmentController]:
-    with db.transaction() as connection:
-        salon_timezone = ZoneInfo(settings.zona_horaria)
-        yield AppointmentController(
-            appointments=AppointmentModel(
-                connection,
-                salon_timezone,
-            ),
-            clients=ClientModel(connection),
-            professionals=ProfessionalModel(connection),
-            services=ServiceModel(connection),
-            salon_timezone=salon_timezone,
-        )
+def get_appointment_controller(
+    connection: Connection = Depends(get_db_connection),
+) -> AppointmentController:
+    salon_timezone = ZoneInfo(settings.zona_horaria)
+    return AppointmentController(
+        appointments=AppointmentModel(
+            connection,
+            salon_timezone,
+        ),
+        clients=ClientModel(connection),
+        professionals=ProfessionalModel(connection),
+        services=ServiceModel(connection),
+        salon_timezone=salon_timezone,
+    )
 
 
 def serialize_public_appointment(appointment: dict) -> dict:

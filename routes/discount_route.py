@@ -1,4 +1,3 @@
-from collections.abc import Iterator
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
@@ -7,7 +6,7 @@ from psycopg import Connection
 
 from app_mvc.config.config import settings
 from app_mvc.controllers.discount_controller import DiscountController
-from app_mvc.db.database import db
+from app_mvc.db.database import get_db_connection
 from app_mvc.models.discount_model import DiscountModel
 from app_mvc.responses import success_response
 from app_mvc.schemas.discount_schema import DiscountRequest, DiscountResponse
@@ -18,9 +17,10 @@ owner_only = [Depends(require_role("dueno"))]
 BUSINESS_TIMEZONE = ZoneInfo(settings.zona_horaria)
 
 
-def get_discount_controller() -> Iterator[DiscountController]:
-    with db.transaction() as connection:
-        yield DiscountController(DiscountModel(connection))
+def get_discount_controller(
+    connection: Connection = Depends(get_db_connection),
+) -> DiscountController:
+    return DiscountController(DiscountModel(connection))
 
 
 def serialize_discount(row: dict) -> dict:

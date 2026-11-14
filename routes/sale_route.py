@@ -1,11 +1,10 @@
-from collections.abc import Iterator
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from psycopg import Connection
 
 from app_mvc.controllers.sale_controller import SaleController
-from app_mvc.db.database import db
+from app_mvc.db.database import get_db_connection
 from app_mvc.models.appointment_model import AppointmentModel
 from app_mvc.models.discount_model import DiscountModel
 from app_mvc.models.sale_model import SaleModel
@@ -17,14 +16,15 @@ router = APIRouter()
 sales_access = require_role("dueno", "vendedor")
 
 
-def get_sale_controller() -> Iterator[SaleController]:
+def get_sale_controller(
+	connection: Connection = Depends(get_db_connection),
+) -> SaleController:
 	"""Crea los tres modelos con la conexión transaccional de esta petición."""
-	with db.transaction() as connection:
-		yield SaleController(
-			sales=SaleModel(connection),
-			appointments=AppointmentModel(connection),
-			discounts=DiscountModel(connection),
-		)
+	return SaleController(
+		sales=SaleModel(connection),
+		appointments=AppointmentModel(connection),
+		discounts=DiscountModel(connection),
+	)
 
 
 def serialize_sale(sale: dict) -> dict:

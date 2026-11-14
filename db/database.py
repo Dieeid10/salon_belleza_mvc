@@ -37,3 +37,8 @@ class Database:
 
 
 db = Database(settings.database_url)
+
+def get_db_connection() -> Iterator[Connection]:
+    """Proporciona una conexión transaccional durante la petición HTTP."""
+    with db.transaction() as connection:
+        yield connection
