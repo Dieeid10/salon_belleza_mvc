@@ -1,4 +1,5 @@
 from datetime import date, datetime, time, timedelta, timezone, tzinfo
+from uuid import UUID
 
 from app_mvc.exceptions.appointments import (
     AppointmentInPast,
@@ -7,6 +8,8 @@ from app_mvc.exceptions.appointments import (
     ProfessionalUnavailable,
     ServiceUnavailable,
     TimeSlotUnavailable,
+    AppointmentClientProfileUnavailable,
+    AppointmentPhoneRequired,
 )
 from app_mvc.models.appointment_model import AppointmentModel
 from app_mvc.models.client_model import ClientModel
@@ -25,26 +28,25 @@ class AppointmentController:
         professionals: ProfessionalModel,
         services: ServiceModel,
         salon_timezone: tzinfo,
-    ) -> None:
+    ):
         self.appointments = appointments
         self.clients = clients
         self.professionals = professionals
         self.services = services
         self.salon_timezone = salon_timezone
 
-    def check_availability(
-        self,
-        professional_id: int,
-        day: date,
-        service_ids: list[int],
-    ) -> dict:
+    def check_availability(self, professional_id: int, day: date, service_ids: list[int]) -> dict:
+
         self._validate_professional(professional_id)
         services = self._get_active_services(service_ids)
+
         duration = timedelta(
             minutes=sum(service["duration_minutes"] for service in services)
         )
+
         schedule = self.appointments.schedule_for(professional_id, day)
         available_starts = []
+
         if schedule:
             busy = self.appointments.occupied_slots(
                 professional_id,
@@ -57,6 +59,7 @@ class AppointmentController:
                 duration,
                 datetime.now(timezone.utc),
             )
+
         return {
             "professional_id": professional_id,
             "date": day,
@@ -64,7 +67,14 @@ class AppointmentController:
             "available_starts": available_starts,
         }
 
-    def book(self, data: dict) -> dict:
+    def book(
+        self, 
+        data: dict,
+        *,
+        user_id: UUID | None = None,
+        guest_only: bool = False,
+    ) -> dict:
+
         professional_id = data["professional_id"]
         self._validate_professional(professional_id)
         services = self._get_active_services(data["service_ids"])
@@ -77,18 +87,28 @@ class AppointmentController:
         duration = timedelta(
             minutes=sum(service["duration_minutes"] for service in services)
         )
+
         ends_at = starts_at + duration
         local_day = starts_at.astimezone(self.salon_timezone).date()
         schedule = self.appointments.schedule_for(professional_id, local_day)
         busy = self.appointments.occupied_slots(professional_id, starts_at, ends_at)
+
         if not self.appointments.is_available(starts_at, ends_at, schedule, busy):
             raise TimeSlotUnavailable()
 
-        client_id = self.clients.get_or_create_for_appointment(
-            data["first_name"],
-            data["last_name"],
-            data["phone"],
-        )
+        if user_id is None:
+            client_id = self.clients.get_or_create_for_appointment(
+                data["first_name"],
+                data["last_name"],
+                data["phone"],
+                guest_only=guest_only,
+            )
+        else:
+            client_id = self._resolve_account_client(
+                user_id,
+                data.get("phone"),
+            )
+
         return self.appointments.create(
             client_id=client_id,
             professional_id=professional_id,
@@ -148,3 +168,20 @@ class AppointmentController:
         if len(services) != len(unique_ids):
             raise ServiceUnavailable()
         return services
+
+    def _resolve_account_client(
+        self,
+        user_id: UUID,
+        phone: str | None,
+    ) -> int:
+        client = self.clients.get_active_for_account(user_id)
+        if client is None:
+            raise AppointmentClientProfileUnavailable()
+
+        if not (client["phone"] or "").strip():
+            if phone is None:
+                raise AppointmentPhoneRequired()
+
+            self.clients.set_booking_phone(client["id"], phone)
+
+        return client["id"]

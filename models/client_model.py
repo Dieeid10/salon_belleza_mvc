@@ -1,5 +1,6 @@
 from psycopg import Connection
 from psycopg.errors import UniqueViolation
+from uuid import UUID
 
 from app_mvc.db.crud import Crud
 from app_mvc.errors import AppError
@@ -119,6 +120,74 @@ class ClientModel:
         if updated_row is None:
             raise ClientNotFound(client_id)
         return updated_row
+
+    def get_or_create_for_appointment(
+        self,
+        first_name: str,
+        last_name: str,
+        phone: str,
+        *,
+        guest_only: bool = False,
+    ) -> int:
+        
+        first_name = first_name.strip()
+        last_name = last_name.strip()
+        phone = phone.strip()
+
+        self.connection.execute(
+            "SELECT pg_advisory_xact_lock(hashtextextended(%s, 0))",
+            (phone,),
+        )
+
+        row = self.connection.execute(
+            """
+            SELECT id FROM clientes
+            WHERE telefono = %s
+              AND (NOT %s OR user_id IS NULL)
+            ORDER BY activo DESC, id
+            LIMIT 1
+            FOR UPDATE
+            """,
+            (phone, guest_only),
+        ).fetchone()
+
+        if row is not None:
+            if guest_only:
+                return row["id"]
+
+            self.connection.execute(
+                """
+                UPDATE clientes
+                SET nombre = %s, apellido = %s, activo = TRUE
+                WHERE id = %s
+                """,
+                (first_name, last_name, row["id"]),
+            )
+            return row["id"]
+
+        created = self.crud.insert(
+            self.TABLE,
+            {
+                "nombre": first_name,
+                "apellido": last_name,
+                "telefono": phone,
+            },
+        )
+        return created["id"]
+
+    def get_active_for_account(self, user_id: UUID) -> dict | None:
+        return self.connection.execute(
+            """
+            SELECT id, telefono AS phone
+            FROM public.clientes
+            WHERE user_id = %s AND activo = TRUE
+            FOR UPDATE
+            """,
+            (user_id,),
+        ).fetchone()
+
+    def set_booking_phone(self, client_id: int, phone: str) -> None:
+        self.crud.update(self.TABLE, client_id, {"telefono": phone})
 
     @staticmethod
     def _datos_db(client_data: dict) -> dict:

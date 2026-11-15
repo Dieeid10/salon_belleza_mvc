@@ -18,6 +18,7 @@ def login(
     body: LoginRequest,
     controller: AuthController = Depends(get_auth_controller),
 ):
+    print('los datos que llegan al login son: ', body)
     tokens = controller.login(body.email, body.password)
     return success_response(tokens, "Inicio de sesión exitoso")
 

@@ -1,5 +1,8 @@
 from datetime import date
 from zoneinfo import ZoneInfo
+from uuid import UUID
+
+from fastapi import HTTPException
 
 from fastapi import APIRouter, Depends, Query, status
 from psycopg import Connection
@@ -19,8 +22,9 @@ from app_mvc.schemas.appointment_schema import (
     BookAppointmentRequest,
     ChangeAppointmentStatusRequest,
     PublicAppointmentResponse,
+    BookAccountAppointmentRequest,
 )
-from app_mvc.security import require_role
+from app_mvc.security import require_role, current_user
 
 public_router = APIRouter()
 admin_router = APIRouter(
@@ -70,13 +74,39 @@ def book_public_appointment(
     body: BookAppointmentRequest,
     controller: AppointmentController = Depends(get_appointment_controller),
 ):
-    appointment = controller.book(body.model_dump())
+    appointment = controller.book(body.model_dump(), guest_only=True)
     return success_response(
         serialize_public_appointment(appointment),
         "Turno reservado correctamente",
         status.HTTP_201_CREATED,
     )
 
+@public_router.post("/me", status_code=status.HTTP_201_CREATED)
+def book_account_appointment(
+    body: BookAccountAppointmentRequest,
+    user: dict = Depends(current_user),
+    controller: AppointmentController = Depends(get_appointment_controller),
+):
+    subject = user.get("sub")
+
+    try:
+        user_id = UUID(subject) if isinstance(subject, str) else None
+    except ValueError:
+        user_id = None
+
+    if user_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Identidad de sesión inválida",
+        )
+
+    appointment = controller.book(body.model_dump(), user_id=user_id)
+
+    return success_response(
+        serialize_public_appointment(appointment),
+        "Turno reservado correctamente",
+        status.HTTP_201_CREATED,
+    )
 
 @admin_router.get("/")
 def list_appointments(

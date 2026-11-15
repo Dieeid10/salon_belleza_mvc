@@ -21,6 +21,10 @@ class AuthModel:
             timeout=10
         )
 
+        if response.is_error:
+            print("Estado:", response.status_code)
+            print("Detalle:", response.text)
+
         if response.status_code in (400, 401):
             raise CredentialsInvalid("Credenciales inválidas")
 

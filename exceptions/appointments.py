@@ -71,3 +71,18 @@ class InvalidDateRange(AppError):
 
     def __init__(self) -> None:
         super().__init__("La fecha inicial debe ser anterior o igual a la fecha final")
+
+class AppointmentClientProfileUnavailable(AppError):
+    status_code = 404
+    code = "appointment_client_profile_unavailable"
+
+    def __init__(self) -> None:
+        super().__init__("La cuenta no tiene una ficha de cliente activa")
+
+
+class AppointmentPhoneRequired(AppError):
+    status_code = 422
+    code = "appointment_phone_required"
+
+    def __init__(self) -> None:
+        super().__init__("Ingresá un teléfono para reservar el turno")
