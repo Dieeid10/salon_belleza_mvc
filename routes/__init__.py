@@ -17,14 +17,6 @@ router.include_router(professional_router, prefix="/professionals", tags=["Profe
 router.include_router(service_router, prefix="/services", tags=["Servicios"])
 router.include_router(discount_router, prefix="/discounts", tags=["Descuentos"])
 router.include_router(sale_router, prefix="/sales", tags=["Ventas"])
-router.include_router(
-	appointment_public_router,
-	prefix="/appointments",
-	tags=["Turnos públicos"],
-)
-router.include_router(
-	appointment_admin_router,
-	prefix="/admin/appointments",
-	tags=["Gestión de turnos"],
-)
+router.include_router(appointment_public_router, prefix="/appointments", tags=["Turnos públicos"])
+router.include_router(appointment_admin_router, prefix="/admin/appointments", tags=["Gestión de turnos"])
 router.include_router(staff_router, prefix="/admin/staff", tags=["Personal"])

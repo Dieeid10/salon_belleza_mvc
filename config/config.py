@@ -25,6 +25,6 @@ class Settings(BaseSettings):
     jwt_algorithm: Literal["ES256", "HS256"] = "ES256"
     jwt_expiration_hours: int = Field(default=1, gt=0)
     zona_horaria: str = "America/Argentina/Buenos_Aires"
-    cors_origins: list[str] = ["http://localhost:3000"]
+    cors_origins: list[str] = ["http://localhost:4321"]
 
 settings = Settings()
